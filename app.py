@@ -26,7 +26,7 @@ material_mult = {
 }
 
 brand_mult = {
-    "обычная": 1.0,
+    "": 1.0,
     "fiat": 1.0,
     "volvo": 1.05,
     "bmw": 1.15,
@@ -35,20 +35,19 @@ brand_mult = {
 }
 
 # ---------------- INPUT ----------------
-st.subheader("Данные автомобиля")
+brand = st.text_input("Марка авто (bmw, fiat, mercedes)").lower()
 
-brand = st.text_input("Марка авто (например: bmw, fiat, mercedes)").lower()
+zones_count = st.number_input("Сколько зон?", 1, 10, 1)
 
-zones_count = st.number_input("Сколько зон повреждений?", 1, 10, 1)
-
-total_price = 0
+# сохраняем ввод, но НЕ считаем
+zones_data = []
 
 for i in range(int(zones_count)):
 
     st.markdown(f"### Зона {i+1}")
 
     size = st.selectbox(
-        "Размер вмятины",
+        "Размер",
         ["маленькая", "средняя", "большая"],
         key=f"size_{i}"
     )
@@ -72,31 +71,42 @@ for i in range(int(zones_count)):
         key=f"dents_{i}"
     )
 
-    price = base_price[size]
-    price *= location_mult[location]
-    price *= material_mult[material]
-    price *= brand_mult.get(brand, 1.0)
+    zones_data.append({
+        "size": size,
+        "location": location,
+        "material": material,
+        "dents": dents
+    })
 
-    price += (dents - 1) * 20
-
-    total_price += price
-
-# ---------------- CALCULATION ----------------
+# ---------------- BUTTON (ВАЖНО!) ----------------
 if st.button("Рассчитать цену"):
 
-    total_price = max(120, min(total_price, 500))
+    total = 0
 
-    fast_price = int(total_price * 0.85)
-    normal_price = int(total_price)
-    final_price = int(round(total_price / 10) * 10)
+    for z in zones_data:
+
+        price = base_price[z["size"]]
+        price *= location_mult[z["location"]]
+        price *= material_mult[z["material"]]
+        price *= brand_mult.get(brand, 1.0)
+
+        price += (z["dents"] - 1) * 20
+
+        total += price
+
+    total = max(120, min(total, 500))
+
+    fast = int(total * 0.85)
+    normal = int(total)
+    final = int(round(total / 10) * 10)
 
     st.subheader("💰 Результат")
 
-    st.write(f"💨 Быстро: {fast_price} €")
-    st.write(f"💼 Обычная цена: {normal_price} €")
-    st.write(f"✅ Итог клиенту: {final_price} €")
+    st.write(f"💨 Быстро: {fast} €")
+    st.write(f"💼 Норм: {normal} €")
+    st.write(f"✅ Итог: {final} €")
 
     st.text_area(
         "Сообщение клиенту",
-        f"Цена ремонта без покраски (PDR): {final_price}€"
+        f"Цена ремонта без покраски (PDR): {final}€"
     )
