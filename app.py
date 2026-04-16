@@ -2,7 +2,6 @@ import streamlit as st
 
 st.title("PDR Calculator PRO+ 🔥")
 
-# ---------------- LANGUAGE ----------------
 lang = st.radio("Language / Язык", ["Русский", "Italiano"])
 
 def t(ru, it):
@@ -53,57 +52,20 @@ materials = {
     "aluminum": t("алюминий", "alluminio")
 }
 
-# ---------------- RESET CONTROL ----------------
-if "result" not in st.session_state:
-    st.session_state.result = None
-
 # ---------------- INPUT ----------------
-brand = st.text_input(t("Марка", "Marca"), key="brand").lower()
+brand = st.text_input(t("Марка", "Marca")).lower()
 
-num_blocks = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1, key="zones")
+num_blocks = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
 
-data = []
-
-for i in range(num_blocks):
-
-    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
-
-    size = st.selectbox(
-        t("Размер", "Dimensione"),
-        list(base.keys()),
-        format_func=lambda x: sizes[x],
-        key=f"size_{i}"
-    )
-
-    location = st.selectbox(
-        t("Место", "Posizione"),
-        list(loc_mult.keys()),
-        format_func=lambda x: zones[x],
-        key=f"loc_{i}"
-    )
-
-    material = st.selectbox(
-        t("Материал", "Materiale"),
-        list(mat_mult.keys()),
-        format_func=lambda x: materials[x],
-        key=f"mat_{i}"
-    )
-
-    dents = st.number_input(
-        t("Количество", "Numero"),
-        min_value=1,
-        value=1,
-        key=f"dents_{i}"
-    )
-
-    data.append((size, location, material, dents))
-
-# ---------------- BUTTON ----------------
-if st.button(t("Продолжить", "Continua")):
-
+def calculate():
     total = 0
 
-    for size, location, material, dents in data:
+    for i in range(num_blocks):
+
+        size = st.session_state[f"size_{i}"]
+        location = st.session_state[f"loc_{i}"]
+        material = st.session_state[f"mat_{i}"]
+        dents = st.session_state[f"dents_{i}"]
 
         price = base[size]
         price *= loc_mult[location]
@@ -114,34 +76,59 @@ if st.button(t("Продолжить", "Continua")):
 
         total += price
 
-    # ---------------- LIMITS ----------------
     total = max(120, min(total, 450))
 
     fast = int(total * 0.85)
+    final = int(round(total / 10) * 10)
 
-    final_price = int(round(total / 10) * 10)
+    return fast, total, final
 
-    st.session_state.result = (fast, total, final_price)
 
-# ---------------- OUTPUT ----------------
-if st.session_state.result:
+# ---------------- DYNAMIC INPUTS ----------------
+for i in range(num_blocks):
 
-    fast, total, final_price = st.session_state.result
+    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+
+    st.selectbox(
+        t("Размер", "Dimensione"),
+        list(base.keys()),
+        key=f"size_{i}"
+    )
+
+    st.selectbox(
+        t("Место", "Posizione"),
+        list(loc_mult.keys()),
+        key=f"loc_{i}"
+    )
+
+    st.selectbox(
+        t("Материал", "Materiale"),
+        list(mat_mult.keys()),
+        key=f"mat_{i}"
+    )
+
+    st.number_input(
+        t("Количество", "Numero"),
+        min_value=1,
+        value=1,
+        key=f"dents_{i}"
+    )
+
+# ---------------- BUTTON ----------------
+if st.button(t("Посчитать", "Calcola")):
+
+    fast, total, final = calculate()
 
     st.subheader(t("Цена", "Prezzo"))
 
     st.write(f"💨 {t('Быстро', 'Veloce')}: {fast} €")
     st.write(f"💼 {t('Норм', 'Normale')}: {total} €")
-    st.write(f"✅ {t('Итог', 'Finale')}: {final_price} €")
+    st.write(f"✅ {t('Итог', 'Finale')}: {final} €")
 
     text = (
-        f"Prezzo per la riparazione: {final_price}€ senza verniciatura (PDR)"
+        f"Prezzo per la riparazione: {final}€ senza verniciatura (PDR)"
         if lang == "Italiano"
-        else f"Цена ремонта: {final_price}€ без покраски (PDR)"
+        else f"Цена ремонта: {final}€ без покраски (PDR)"
     )
 
     st.text_area(t("Сообщение клиенту", "Messaggio cliente"), text)
-
-    if st.button("🔄"):
-        st.session_state.result = None
-        st.rerun()
