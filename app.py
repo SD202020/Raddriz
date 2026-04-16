@@ -1,42 +1,50 @@
 import streamlit as st
 
-# ---------------- MUST BE FIRST STREAMLIT COMMAND ----------------
-st.set_page_config(page_title="Raddriz", layout="centered")
+st.set_page_config(page_title="Raddriz PRO", layout="centered")
 
-st.title("Raddriz 🔧 PDR калькулятор")
+st.title("Raddriz PRO 🔧 PDR калькулятор")
 
-# ---------------- DATA ----------------
+# ---------------- BASE PRICE ----------------
 base_price = {
-    "маленькая": 60,
-    "средняя": 120,
-    "большая": 220
+    "маленькая": 70,
+    "средняя": 140,
+    "большая": 260
 }
 
+# ---------------- MULTIPLIERS ----------------
 location_mult = {
     "дверь": 1.0,
-    "капот": 1.0,
-    "багажник": 1.05,
-    "крыша": 1.15,
-    "стойка": 1.25,
-    "ребро": 1.30
+    "капот": 1.05,
+    "багажник": 1.10,
+    "крыша": 1.20,
+    "стойка": 1.35,
+    "ребро": 1.40
 }
 
 material_mult = {
     "сталь": 1.0,
-    "алюминий": 1.25
+    "алюминий": 1.35
 }
 
+# ---------------- BRAND COMPLEXITY (ВАЖНО) ----------------
 brand_mult = {
     "": 1.0,
     "fiat": 1.0,
-    "volvo": 1.05,
-    "bmw": 1.15,
-    "audi": 1.15,
-    "mercedes": 1.20
+    "volvo": 1.10,
+    "bmw": 1.30,
+    "audi": 1.30,
+    "mercedes": 1.40
+}
+
+brand_fixed = {
+    "bmw": 25,
+    "audi": 25,
+    "mercedes": 30,
+    "volvo": 15
 }
 
 # ---------------- INPUT ----------------
-brand = st.text_input("Марка авто (bmw, fiat, mercedes)").lower()
+brand = st.text_input("Марка авто (bmw, audi, mercedes, fiat)").lower()
 
 zones_count = st.number_input("Сколько зон повреждений?", 1, 10, 1)
 
@@ -47,7 +55,7 @@ for i in range(int(zones_count)):
     st.markdown(f"### Зона {i+1}")
 
     size = st.selectbox(
-        "Размер вмятины",
+        "Размер",
         ["маленькая", "средняя", "большая"],
         key=f"size_{i}"
     )
@@ -66,8 +74,7 @@ for i in range(int(zones_count)):
 
     dents = st.number_input(
         "Количество вмятин",
-        min_value=1,
-        value=1,
+        1, 10, 1,
         key=f"dents_{i}"
     )
 
@@ -85,18 +92,28 @@ if st.button("Рассчитать цену"):
 
     for z in zones:
 
+        # 1. БАЗА
         price = base_price[z["size"]]
+
+        # 2. СЛОЖНОСТЬ ЗОНЫ (время работы)
         price *= location_mult[z["location"]]
+
+        # 3. МАТЕРИАЛ (алюминий сложнее)
         price *= material_mult[z["material"]]
+
+        # 4. МАРКА (и сложность, и время)
         price *= brand_mult.get(brand, 1.0)
 
-        # влияние количества вмятин (сильнее, чем раньше)
-        price *= (1 + (z["dents"] - 1) * 0.4)
+        # 5. ДОПОЛНИТЕЛЬНАЯ СЛОЖНОСТЬ ВМЯТИН
+        price *= (1 + (z["dents"] - 1) * 0.45)
+
+        # 6. ФИКС ЗА ПРЕМИУМ МАРКИ (ВАЖНО)
+        price += brand_fixed.get(brand, 0)
 
         total += price
 
-    # лимиты рынка Неаполя
-    total = max(120, min(total, 550))
+    # ---------------- MARKET LIMITS (NEAPOL) ----------------
+    total = max(130, min(total, 800))
 
     fast = int(total * 0.85)
     normal = int(total)
@@ -105,8 +122,8 @@ if st.button("Рассчитать цену"):
     st.subheader("💰 Результат")
 
     st.write(f"💨 Быстро: {fast} €")
-    st.write(f"💼 Норм: {normal} €")
-    st.write(f"✅ Итог: {final} €")
+    st.write(f"💼 Обычная цена: {normal} €")
+    st.write(f"✅ Итог клиенту: {final} €")
 
     st.text_area(
         "Сообщение клиенту",
