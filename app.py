@@ -4,18 +4,23 @@ st.set_page_config(page_title="Raddriz MAP", layout="centered")
 
 st.title("Raddriz MAP 🔧 PDR калькулятор")
 
-# ---------------- MODE ----------------
 mode = st.radio("Режим", ["Обычный", "Град (Hail)"])
 vehicle_type = st.radio("Тип транспорта", ["Авто", "Мото"])
 
 # ======================================================
-# 🚗 AUTO DATA
+# DATA
 # ======================================================
 
 base_price = {
     "маленькая": 50,
     "средняя": 110,
     "большая": 200
+}
+
+size_mult = {
+    "маленькая": 1.0,
+    "средняя": 1.4,
+    "большая": 2.2
 }
 
 location_data = {
@@ -68,9 +73,7 @@ if vehicle_type == "Авто":
 
     brand = st.text_input("Марка авто").lower()
 
-    # =========================
-    # 🔹 ОБЫЧНЫЙ РЕЖИМ
-    # =========================
+    # ================= ОБЫЧНЫЙ =================
     if mode == "Обычный":
 
         zones_count = st.number_input("Сколько зон?", 1, 20, 1)
@@ -80,12 +83,6 @@ if vehicle_type == "Авто":
         for i in range(int(zones_count)):
 
             st.markdown(f"### Зона {i+1}")
-
-            size = st.selectbox(
-                "Размер",
-                ["маленькая", "средняя", "большая"],
-                key=f"size_{i}"
-            )
 
             location = st.selectbox(
                 "Место",
@@ -99,17 +96,16 @@ if vehicle_type == "Авто":
                 key=f"mat_{i}"
             )
 
-            dents = st.number_input(
-                "Вмятины",
-                1, 1000, 1,
-                key=f"dents_{i}"
-            )
+            small = st.number_input("Маленькие", 0, 1000, 0, key=f"s_{i}")
+            medium = st.number_input("Средние", 0, 1000, 0, key=f"m_{i}")
+            large = st.number_input("Большие", 0, 1000, 0, key=f"l_{i}")
 
             zones.append({
-                "size": size,
                 "location": location,
                 "material": material,
-                "dents": dents
+                "small": small,
+                "medium": medium,
+                "large": large
             })
 
         if st.button("Рассчитать"):
@@ -118,31 +114,35 @@ if vehicle_type == "Авто":
 
             for z in zones:
 
-                price = base_price[z["size"]]
-                price *= location_data[z["location"]]
-                price *= material_mult[z["material"]]
-                price *= brand_mult.get(brand, 1.0)
+                for size, count in [
+                    ("маленькая", z["small"]),
+                    ("средняя", z["medium"]),
+                    ("большая", z["large"])
+                ]:
 
-                d = z["dents"]
+                    if count == 0:
+                        continue
 
-                # авто-град если много
-                if d > 50:
-                    price *= (d * 8) * 0.6   # оптовая логика
-                else:
-                    price *= (1 + 0.25 * (d - 1)) * (0.96 ** (d - 1))
+                    price = base_price[size]
+                    price *= location_data[z["location"]]
+                    price *= material_mult[z["material"]]
+                    price *= brand_mult.get(brand, 1.0)
 
-                total += price
+                    if count > 50:
+                        price *= (count * 9) * size_mult[size] * 0.7
+                    else:
+                        price *= (1 + 0.25 * (count - 1)) * (0.96 ** (count - 1))
+
+                    total += price
 
             total = int(round(total / 10) * 10)
 
             st.subheader(f"💰 Итог: {total} €")
 
-    # =========================
-    # 🌨️ ГРАД РЕЖИМ
-    # =========================
+    # ================= ГРАД =================
     else:
 
-        st.subheader("🌨️ Град — быстрый расчёт")
+        st.subheader("🌨️ Град")
 
         parts_count = st.number_input("Сколько деталей?", 1, 15, 1)
 
@@ -155,25 +155,25 @@ if vehicle_type == "Авто":
             part = st.selectbox(
                 "Деталь",
                 list(hail_parts.keys()),
-                key=f"hail_part_{i}"
-            )
-
-            dents = st.number_input(
-                "Количество вмятин",
-                1, 1000, 50,
-                key=f"hail_dents_{i}"
+                key=f"p_{i}"
             )
 
             material = st.selectbox(
                 "Материал",
                 list(material_mult.keys()),
-                key=f"hail_mat_{i}"
+                key=f"mat_h_{i}"
             )
+
+            small = st.number_input("Маленькие", 0, 1000, 20, key=f"hs_{i}")
+            medium = st.number_input("Средние", 0, 1000, 0, key=f"hm_{i}")
+            large = st.number_input("Большие", 0, 1000, 0, key=f"hl_{i}")
 
             parts.append({
                 "part": part,
-                "dents": dents,
-                "material": material
+                "material": material,
+                "small": small,
+                "medium": medium,
+                "large": large
             })
 
         if st.button("Рассчитать град"):
@@ -182,38 +182,45 @@ if vehicle_type == "Авто":
 
             for p in parts:
 
-                base = 8  # цена за точку
+                for size, count in [
+                    ("маленькая", p["small"]),
+                    ("средняя", p["medium"]),
+                    ("большая", p["large"])
+                ]:
 
-                price = p["dents"] * base
-                price *= hail_parts[p["part"]]
-                price *= material_mult[p["material"]]
-                price *= brand_mult.get(brand, 1.0)
+                    if count == 0:
+                        continue
 
-                total += price
+                    base = 6  # дешевле чем обычка
 
-            total *= 0.85  # скидка за объем
+                    price = count * base
+                    price *= size_mult[size]
+                    price *= hail_parts[p["part"]]
+                    price *= material_mult[p["material"]]
+                    price *= brand_mult.get(brand, 1.0)
+
+                    total += price
+
+            total *= 0.9  # объем
 
             total = int(round(total / 10) * 10)
 
-            st.subheader(f"💰 Цена за град: {total} €")
+            st.subheader(f"💰 Цена: {total} €")
 
 # ======================================================
-# 🏍️ MOTORCYCLE
+# 🏍️ МОТО
 # ======================================================
 
 else:
 
-    st.subheader("🏍️ Мото расчёт")
+    st.subheader("🏍️ Мото")
 
-    moto_type = st.selectbox("Тип мото", ["Harley", "Sport", "Other"])
-
-    tank_size_cm = st.number_input("Вмятина бака (см)", 1, 50, 5)
-
-    dents = st.number_input("Количество вмятин", 1, 1000, 1)
-
+    moto_type = st.selectbox("Тип", ["Harley", "Sport", "Other"])
     material = st.selectbox("Материал", ["сталь", "алюминий"])
 
-    base_moto = 75
+    small = st.number_input("Маленькие", 0, 1000, 0)
+    medium = st.number_input("Средние", 0, 1000, 0)
+    large = st.number_input("Большие", 0, 1000, 0)
 
     moto_mult = {
         "Harley": 1.55,
@@ -221,12 +228,24 @@ else:
         "Other": 1.15
     }
 
-    price = base_moto
-    price *= (1 + tank_size_cm * 0.20)
-    price *= (1 + 0.30 * (dents - 1)) * (0.95 ** (dents - 1))
-    price *= moto_mult[moto_type]
-    price *= material_mult[material]
+    total = 0
 
-    price = int(round(price / 10) * 10)
+    for size, count in [
+        ("маленькая", small),
+        ("средняя", medium),
+        ("большая", large)
+    ]:
 
-    st.subheader(f"💰 Цена: {price} €")
+        if count == 0:
+            continue
+
+        price = base_price[size]
+        price *= moto_mult[moto_type]
+        price *= material_mult[material]
+        price *= (1 + 0.30 * (count - 1)) * (0.95 ** (count - 1))
+
+        total += price
+
+    total = int(round(total / 10) * 10)
+
+    st.subheader(f"💰 Цена: {total} €")
