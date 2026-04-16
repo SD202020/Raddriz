@@ -7,7 +7,10 @@ st.title("Raddriz MAP 🔧 PDR калькулятор")
 # ---------------- MODE ----------------
 vehicle_type = st.radio("Тип транспорта", ["Авто", "Мото"])
 
-# ---------------- AUTO DATA ----------------
+# ======================================================
+# 🚗 AUTO SECTION
+# ======================================================
+
 base_price = {
     "маленькая": 50,
     "средняя": 110,
@@ -40,7 +43,10 @@ brand_mult = {
     "mercedes": 1.2
 }
 
-# ---------------- INPUT AUTO ----------------
+# ======================================================
+# 🚗 AUTO LOGIC
+# ======================================================
+
 if vehicle_type == "Авто":
 
     brand = st.text_input("Марка авто").lower()
@@ -91,6 +97,7 @@ if vehicle_type == "Авто":
         for z in zones:
 
             price = base_price[z["size"]]
+
             price *= location_data[z["location"]]
             price *= material_mult[z["material"]]
             price *= brand_mult.get(brand, 1.0)
@@ -102,34 +109,60 @@ if vehicle_type == "Авто":
 
         total = max(100, min(total, 650))
 
-        st.subheader(f"💰 Цена: {int(total)} €")
+        fast = int(total * 0.85)
+        normal = int(total)
+        final = int(round(total / 10) * 10)
 
-# ---------------- MOTORCYCLE ----------------
+        st.subheader("💰 Результат")
+
+        st.write(f"💨 Быстро: {fast} €")
+        st.write(f"💼 Норм: {normal} €")
+        st.write(f"✅ Итог: {final} €")
+
+        st.text_area(
+            "Сообщение клиенту",
+            f"Цена ремонта без покраски (PDR): {final}€"
+        )
+
+# ======================================================
+# 🏍️ MOTORCYCLE SECTION
+# ======================================================
+
 else:
+
+    st.subheader("🏍️ Мото расчёт")
 
     moto_type = st.selectbox("Тип мото", ["Harley", "Sport", "Other"])
 
     tank_size_cm = st.number_input("Вмятина бака (см)", 1, 50, 5)
 
+    dents = st.number_input("Количество вмятин на баке", 1, 10, 1)
+
     material = st.selectbox("Материал бака", ["сталь", "алюминий"])
 
-    # ---------------- MOTORCYCLE LOGIC ----------------
-    base_moto = 60
+    # ---------------- MOTORCYCLE BASE ----------------
+    base_moto = 75
 
     moto_mult = {
-        "Harley": 1.4,
-        "Sport": 1.2,
-        "Other": 1.0
+        "Harley": 1.55,
+        "Sport": 1.35,
+        "Other": 1.15
     }
 
     price = base_moto
 
-    # размер в см = главный фактор
-    price *= (1 + tank_size_cm * 0.18)
+    # размер бака
+    price *= (1 + tank_size_cm * 0.20)
 
+    # вмятины
+    price *= (1 + 0.30 * (dents - 1)) * (0.95 ** (dents - 1))
+
+    # тип мото
     price *= moto_mult[moto_type]
+
+    # материал
     price *= material_mult[material]
 
-    price = max(80, min(price, 500))
+    price = max(90, min(price, 650))
 
     st.subheader(f"💰 Цена мото: {int(price)} €")
