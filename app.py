@@ -1,30 +1,32 @@
 import streamlit as st
 
-st.title("PDR Calculator PRO+ 🔥")
+st.set_page_config(page_title="Raddriz", layout="centered")
 
-lang = st.selectbox("Язык / Lingua", ["Русский", "Italiano"])
-
-def t(ru, it):
-    return ru if lang == "Русский" else it
+st.title("Raddriz 🔧 PDR калькулятор")
 
 # ---------------- DATA ----------------
-base = {"small": 50, "medium": 75, "large": 110}
-
-loc_mult = {
-    "door": 1.0,
-    "hood": 1.0,
-    "trunk": 1.05,
-    "roof": 1.15,
-    "pillar": 1.25,
-    "edge": 1.3
+base_price = {
+    "маленькая": 50,
+    "средняя": 75,
+    "большая": 110
 }
 
-mat_mult = {
-    "steel": 1.0,
-    "aluminum": 1.25
+location_mult = {
+    "дверь": 1.0,
+    "капот": 1.0,
+    "багажник": 1.05,
+    "крыша": 1.15,
+    "стойка": 1.25,
+    "ребро": 1.30
+}
+
+material_mult = {
+    "сталь": 1.0,
+    "алюминий": 1.25
 }
 
 brand_mult = {
+    "обычная": 1.0,
     "fiat": 1.0,
     "volvo": 1.05,
     "bmw": 1.15,
@@ -32,65 +34,69 @@ brand_mult = {
     "mercedes": 1.2
 }
 
-sizes = ["small", "medium", "large"]
-locations = list(loc_mult.keys())
-materials = list(mat_mult.keys())
-
 # ---------------- INPUT ----------------
-brand = st.text_input(t("Марка", "Marca")).lower()
+st.subheader("Данные автомобиля")
 
-num = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
+brand = st.text_input("Марка авто (например: bmw, fiat, mercedes)").lower()
 
-zones_data = []
+zones_count = st.number_input("Сколько зон повреждений?", 1, 10, 1)
 
-for i in range(int(num)):
+total_price = 0
 
-    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+for i in range(int(zones_count)):
 
-    col1, col2, col3, col4 = st.columns(4)
+    st.markdown(f"### Зона {i+1}")
 
-    with col1:
-        size = st.selectbox(t("Размер", "Dimensione"), sizes, key=f"size_{i}")
+    size = st.selectbox(
+        "Размер вмятины",
+        ["маленькая", "средняя", "большая"],
+        key=f"size_{i}"
+    )
 
-    with col2:
-        location = st.selectbox(t("Место", "Posizione"), locations, key=f"loc_{i}")
+    location = st.selectbox(
+        "Место",
+        ["дверь", "капот", "багажник", "крыша", "стойка", "ребро"],
+        key=f"loc_{i}"
+    )
 
-    with col3:
-        material = st.selectbox(t("Материал", "Materiale"), materials, key=f"mat_{i}")
+    material = st.selectbox(
+        "Материал",
+        ["сталь", "алюминий"],
+        key=f"mat_{i}"
+    )
 
-    with col4:
-        dents = st.number_input(t("Кол-во", "Numero"), 1, 10, 1, key=f"d_{i}")
+    dents = st.number_input(
+        "Количество вмятин",
+        min_value=1,
+        value=1,
+        key=f"dents_{i}"
+    )
 
-    zones_data.append((size, location, material, dents))
+    price = base_price[size]
+    price *= location_mult[location]
+    price *= material_mult[material]
+    price *= brand_mult.get(brand, 1.0)
 
-# ---------------- CALC ----------------
-if st.button(t("Посчитать", "Calcola")):
+    price += (dents - 1) * 20
 
-    total = 0
+    total_price += price
 
-    for size, location, material, dents in zones_data:
+# ---------------- CALCULATION ----------------
+if st.button("Рассчитать цену"):
 
-        price = base[size]
-        price *= loc_mult[location]
-        price *= mat_mult[material]
-        price *= brand_mult.get(brand, 1.0)
-        price += (dents - 1) * 20
+    total_price = max(120, min(total_price, 500))
 
-        total += price
+    fast_price = int(total_price * 0.85)
+    normal_price = int(total_price)
+    final_price = int(round(total_price / 10) * 10)
 
-    total = max(120, min(total, 450))
+    st.subheader("💰 Результат")
 
-    fast = int(total * 0.85)
-    final = int(round(total / 10) * 10)
-
-    st.subheader(t("Цена", "Prezzo"))
-
-    st.write(f"💨 {t('Быстро', 'Veloce')}: {fast} €")
-    st.write(f"💼 {t('Норм', 'Normale')}: {int(total)} €")
-    st.write(f"✅ {t('Итог', 'Finale')}: {final} €")
+    st.write(f"💨 Быстро: {fast_price} €")
+    st.write(f"💼 Обычная цена: {normal_price} €")
+    st.write(f"✅ Итог клиенту: {final_price} €")
 
     st.text_area(
-        t("Сообщение клиенту", "Messaggio cliente"),
-        f"{final}€ senza verniciatura (PDR)" if lang == "Italiano"
-        else f"{final}€ без покраски (PDR)"
+        "Сообщение клиенту",
+        f"Цена ремонта без покраски (PDR): {final_price}€"
     )
