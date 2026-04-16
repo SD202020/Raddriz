@@ -9,11 +9,7 @@ def t(ru, it):
     return ru if lang == "Русский" else it
 
 # ---------------- DATA ----------------
-base = {
-    "small": 50,
-    "medium": 75,
-    "large": 110
-}
+base = {"small": 50, "medium": 75, "large": 110}
 
 loc_mult = {
     "door": 1.0,
@@ -57,53 +53,53 @@ materials = {
     "aluminum": t("алюминий", "alluminio")
 }
 
-# ---------------- INPUT FORM ----------------
-with st.form("calculator_form"):
+# ---------------- RESET CONTROL ----------------
+if "result" not in st.session_state:
+    st.session_state.result = None
 
-    brand = st.text_input(t("Марка", "Marca")).lower()
+# ---------------- INPUT ----------------
+brand = st.text_input(t("Марка", "Marca"), key="brand").lower()
 
-    num_blocks = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
+num_blocks = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1, key="zones")
 
-    data = []
+data = []
 
-    for i in range(num_blocks):
+for i in range(num_blocks):
 
-        st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
 
-        size = st.selectbox(
-            t("Размер", "Dimensione"),
-            list(base.keys()),
-            format_func=lambda x: sizes[x],
-            key=f"s{i}"
-        )
+    size = st.selectbox(
+        t("Размер", "Dimensione"),
+        list(base.keys()),
+        format_func=lambda x: sizes[x],
+        key=f"size_{i}"
+    )
 
-        location = st.selectbox(
-            t("Место", "Posizione"),
-            list(loc_mult.keys()),
-            format_func=lambda x: zones[x],
-            key=f"l{i}"
-        )
+    location = st.selectbox(
+        t("Место", "Posizione"),
+        list(loc_mult.keys()),
+        format_func=lambda x: zones[x],
+        key=f"loc_{i}"
+    )
 
-        material = st.selectbox(
-            t("Материал", "Materiale"),
-            list(mat_mult.keys()),
-            format_func=lambda x: materials[x],
-            key=f"m{i}"
-        )
+    material = st.selectbox(
+        t("Материал", "Materiale"),
+        list(mat_mult.keys()),
+        format_func=lambda x: materials[x],
+        key=f"mat_{i}"
+    )
 
-        dents = st.number_input(
-            t("Количество", "Numero"),
-            min_value=1,
-            value=1,
-            key=f"d{i}"
-        )
+    dents = st.number_input(
+        t("Количество", "Numero"),
+        min_value=1,
+        value=1,
+        key=f"dents_{i}"
+    )
 
-        data.append((size, location, material, dents))
+    data.append((size, location, material, dents))
 
-    submitted = st.form_submit_button(t("Продолжить", "Continua"))
-
-# ---------------- CALCULATION ----------------
-if submitted:
+# ---------------- BUTTON ----------------
+if st.button(t("Продолжить", "Continua")):
 
     total = 0
 
@@ -118,23 +114,24 @@ if submitted:
 
         total += price
 
-    # ---------------- MARKET LIMITS ----------------
-    if total < 120:
-        total = 120
-
-    if total > 450:
-        total = 450
+    # ---------------- LIMITS ----------------
+    total = max(120, min(total, 450))
 
     fast = int(total * 0.85)
 
-    # ---------------- OUTPUT ----------------
-    st.subheader(t("Цена", "Prezzo"))
-
-    st.write(f"💨 {t('Быстро', 'Veloce')}: {int(fast)} €")
-    st.write(f"💼 {t('Норм', 'Normale')}: {int(total)} €")
-
     final_price = int(round(total / 10) * 10)
 
+    st.session_state.result = (fast, total, final_price)
+
+# ---------------- OUTPUT ----------------
+if st.session_state.result:
+
+    fast, total, final_price = st.session_state.result
+
+    st.subheader(t("Цена", "Prezzo"))
+
+    st.write(f"💨 {t('Быстро', 'Veloce')}: {fast} €")
+    st.write(f"💼 {t('Норм', 'Normale')}: {total} €")
     st.write(f"✅ {t('Итог', 'Finale')}: {final_price} €")
 
     text = (
@@ -145,4 +142,6 @@ if submitted:
 
     st.text_area(t("Сообщение клиенту", "Messaggio cliente"), text)
 
-    st.success(t("Готово!", "Fatto!"))
+    if st.button("🔄"):
+        st.session_state.result = None
+        st.rerun()
