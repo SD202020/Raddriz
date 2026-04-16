@@ -1,10 +1,17 @@
 import streamlit as st
 
+# ---------------- MUST BE FIRST STREAMLIT COMMAND ----------------
 st.set_page_config(page_title="Raddriz", layout="centered")
 
 st.title("Raddriz 🔧 PDR калькулятор")
 
 # ---------------- DATA ----------------
+base_price = {
+    "маленькая": 60,
+    "средняя": 120,
+    "большая": 220
+}
+
 location_mult = {
     "дверь": 1.0,
     "капот": 1.0,
@@ -25,22 +32,22 @@ brand_mult = {
     "volvo": 1.05,
     "bmw": 1.15,
     "audi": 1.15,
-    "mercedes": 1.2
+    "mercedes": 1.20
 }
 
 # ---------------- INPUT ----------------
-brand = st.text_input("Марка авто").lower()
+brand = st.text_input("Марка авто (bmw, fiat, mercedes)").lower()
 
-zones_count = st.number_input("Сколько зон?", 1, 10, 1)
+zones_count = st.number_input("Сколько зон повреждений?", 1, 10, 1)
 
-zones_data = []
+zones = []
 
 for i in range(int(zones_count)):
 
     st.markdown(f"### Зона {i+1}")
 
     size = st.selectbox(
-        "Размер",
+        "Размер вмятины",
         ["маленькая", "средняя", "большая"],
         key=f"size_{i}"
     )
@@ -59,51 +66,46 @@ for i in range(int(zones_count)):
 
     dents = st.number_input(
         "Количество вмятин",
-        1, 10, 1,
+        min_value=1,
+        value=1,
         key=f"dents_{i}"
     )
 
-    zones_data.append({
+    zones.append({
         "size": size,
         "location": location,
         "material": material,
         "dents": dents
     })
 
-# ---------------- CALC ----------------
-if st.button("Рассчитать"):
+# ---------------- CALCULATION ----------------
+if st.button("Рассчитать цену"):
 
     total = 0
 
-    for z in zones_data:
+    for z in zones:
 
-        # БАЗА
-        if z["size"] == "маленькая":
-            price = 60
-        elif z["size"] == "средняя":
-            price = 120
-        else:
-            price = 220
-
-        # КОЭФФИЦИЕНТЫ
+        price = base_price[z["size"]]
         price *= location_mult[z["location"]]
         price *= material_mult[z["material"]]
         price *= brand_mult.get(brand, 1.0)
 
-        # ВМЯТИНЫ
-        price *= (1 + (z["dents"] - 1) * 0.35)
+        # влияние количества вмятин (сильнее, чем раньше)
+        price *= (1 + (z["dents"] - 1) * 0.4)
 
         total += price
 
-    total = max(120, min(total, 500))
+    # лимиты рынка Неаполя
+    total = max(120, min(total, 550))
 
     fast = int(total * 0.85)
+    normal = int(total)
     final = int(round(total / 10) * 10)
 
     st.subheader("💰 Результат")
 
     st.write(f"💨 Быстро: {fast} €")
-    st.write(f"💼 Норм: {int(total)} €")
+    st.write(f"💼 Норм: {normal} €")
     st.write(f"✅ Итог: {final} €")
 
     st.text_area(
