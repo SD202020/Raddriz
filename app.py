@@ -8,14 +8,13 @@ lang = st.radio("Language / Язык", ["Русский", "Italiano"])
 def t(ru, it):
     return ru if lang == "Русский" else it
 
-# ---------------- BASE ----------------
+# ---------------- DATA ----------------
 base = {
     "small": 50,
     "medium": 75,
     "large": 110
 }
 
-# ---------------- LOCATION MULTIPLIER ----------------
 loc_mult = {
     "door": 1.0,
     "hood": 1.0,
@@ -25,13 +24,11 @@ loc_mult = {
     "edge": 1.3
 }
 
-# ---------------- MATERIAL MULTIPLIER ----------------
 mat_mult = {
     "steel": 1.0,
     "aluminum": 1.25
 }
 
-# ---------------- BRAND MULTIPLIER ----------------
 brand_mult = {
     "fiat": 1.0,
     "volvo": 1.05,
@@ -40,7 +37,6 @@ brand_mult = {
     "mercedes": 1.2
 }
 
-# ---------------- UI TEXT ----------------
 zones = {
     "door": t("Дверь", "Porta"),
     "hood": t("Капот", "Cofano"),
@@ -61,97 +57,92 @@ materials = {
     "aluminum": t("алюминий", "alluminio")
 }
 
-# ---------------- INPUT ----------------
-brand = st.text_input(t("Марка", "Marca")).lower()
+# ---------------- INPUT FORM ----------------
+with st.form("calculator_form"):
 
-num_blocks = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
+    brand = st.text_input(t("Марка", "Marca")).lower()
 
-total = 0
+    num_blocks = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
 
-for i in range(num_blocks):
+    data = []
 
-    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+    for i in range(num_blocks):
 
-    size = st.selectbox(
-        t("Размер", "Dimensione"),
-        list(base.keys()),
-        format_func=lambda x: sizes[x],
-        key=f"s{i}"
+        st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+
+        size = st.selectbox(
+            t("Размер", "Dimensione"),
+            list(base.keys()),
+            format_func=lambda x: sizes[x],
+            key=f"s{i}"
+        )
+
+        location = st.selectbox(
+            t("Место", "Posizione"),
+            list(loc_mult.keys()),
+            format_func=lambda x: zones[x],
+            key=f"l{i}"
+        )
+
+        material = st.selectbox(
+            t("Материал", "Materiale"),
+            list(mat_mult.keys()),
+            format_func=lambda x: materials[x],
+            key=f"m{i}"
+        )
+
+        dents = st.number_input(
+            t("Количество", "Numero"),
+            min_value=1,
+            value=1,
+            key=f"d{i}"
+        )
+
+        data.append((size, location, material, dents))
+
+    submitted = st.form_submit_button(t("Продолжить", "Continua"))
+
+# ---------------- CALCULATION ----------------
+if submitted:
+
+    total = 0
+
+    for size, location, material, dents in data:
+
+        price = base[size]
+        price *= loc_mult[location]
+        price *= mat_mult[material]
+        price *= brand_mult.get(brand, 1.0)
+
+        price += (dents - 1) * 20
+
+        total += price
+
+    # ---------------- MARKET LIMITS ----------------
+    if total < 120:
+        total = 120
+
+    if total > 450:
+        total = 450
+
+    fast = int(total * 0.85)
+
+    # ---------------- OUTPUT ----------------
+    st.subheader(t("Цена", "Prezzo"))
+
+    st.write(f"💨 {t('Быстро', 'Veloce')}: {int(fast)} €")
+    st.write(f"💼 {t('Норм', 'Normale')}: {int(total)} €")
+
+    final_price = int(round(total / 10) * 10)
+
+    st.write(f"✅ {t('Итог', 'Finale')}: {final_price} €")
+
+    text = (
+        f"Prezzo per la riparazione: {final_price}€ senza verniciatura (PDR)"
+        if lang == "Italiano"
+        else f"Цена ремонта: {final_price}€ без покраски (PDR)"
     )
 
-    location = st.selectbox(
-        t("Место", "Posizione"),
-        list(loc_mult.keys()),
-        format_func=lambda x: zones[x],
-        key=f"l{i}"
-    )
+    st.text_area(t("Сообщение клиенту", "Messaggio cliente"), text)
 
-    material = st.selectbox(
-        t("Материал", "Materiale"),
-        list(mat_mult.keys()),
-        format_func=lambda x: materials[x],
-        key=f"m{i}"
-    )
-
-    dents = st.number_input(
-        t("Количество", "Numero"),
-        min_value=1,
-        value=1,
-        key=f"d{i}"
-    )
-
-    # ---------------- CALCULATION ----------------
-    price = base[size]
-
-    price *= loc_mult[location]
-    price *= mat_mult[material]
-    price *= brand_mult.get(brand, 1.0)
-
-    # extra dents
-    price += (dents - 1) * 20
-
-    total += price
-
-# ---------------- MARKET LIMITS (NAPLES) ----------------
-if total < 120:
-    total = 120
-
-if total > 450:
-    total = 450
-
-fast = int(total * 0.85)
-
-# ---------------- SALES MODE ----------------
-mode = st.selectbox(
-    t("Режим", "Modalità"),
-    [t("Обычный", "Normale"),
-     t("Закрыть клиента", "Chiudere cliente"),
-     t("Свой клиент", "Cliente abituale")]
-)
-
-if mode == t("Закрыть клиента", "Chiudere cliente"):
-    final_price = fast * 0.95
-elif mode == t("Свой клиент", "Cliente abituale"):
-    final_price = total * 0.9
-else:
-    final_price = total
-
-# round psychology price
-final_price = int(round(final_price / 10) * 10)
-
-# ---------------- OUTPUT ----------------
-st.subheader(t("Цена", "Prezzo"))
-
-st.write(f"💨 {t('Быстро', 'Veloce')}: {int(fast)} €")
-st.write(f"💼 {t('Норм', 'Normale')}: {int(total)} €")
-st.write(f"✅ {t('Итог', 'Finale')}: {final_price} €")
-
-text = (
-    f"Prezzo per la riparazione: {final_price}€ senza verniciatura (PDR)"
-    if lang == "Italiano"
-    else f"Цена ремонта: {final_price}€ без покраски (PDR)"
-)
-
-st.text_area(t("Сообщение клиенту", "Messaggio cliente"), text)
-
-st.button(t("Копировать", "Copia"))
+    st.success(t("Готово!", "Fatto!"))
