@@ -25,7 +25,6 @@ mat_mult = {
 }
 
 brand_mult = {
-    "": 1.0,
     "fiat": 1.0,
     "volvo": 1.05,
     "bmw": 1.15,
@@ -33,43 +32,43 @@ brand_mult = {
     "mercedes": 1.2
 }
 
-# ---------------- INPUT FORM ----------------
-with st.form("calc_form"):
+sizes = ["small", "medium", "large"]
+locations = list(loc_mult.keys())
+materials = list(mat_mult.keys())
 
-    brand = st.text_input(t("Марка", "Marca")).lower()
+# ---------------- INPUT ----------------
+brand = st.text_input(t("Марка", "Marca")).lower()
 
-    num = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
+num = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
+
+zones_data = []
+
+for i in range(int(num)):
+
+    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        size = st.selectbox(t("Размер", "Dimensione"), sizes, key=f"size_{i}")
+
+    with col2:
+        location = st.selectbox(t("Место", "Posizione"), locations, key=f"loc_{i}")
+
+    with col3:
+        material = st.selectbox(t("Материал", "Materiale"), materials, key=f"mat_{i}")
+
+    with col4:
+        dents = st.number_input(t("Кол-во", "Numero"), 1, 10, 1, key=f"d_{i}")
+
+    zones_data.append((size, location, material, dents))
+
+# ---------------- CALC ----------------
+if st.button(t("Посчитать", "Calcola")):
 
     total = 0
 
-    for i in range(num):
-
-        st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
-
-        size = st.selectbox(
-            t("Размер", "Dimensione"),
-            ["small", "medium", "large"],
-            key=f"s{i}"
-        )
-
-        location = st.selectbox(
-            t("Место", "Posizione"),
-            list(loc_mult.keys()),
-            key=f"l{i}"
-        )
-
-        material = st.selectbox(
-            t("Материал", "Materiale"),
-            list(mat_mult.keys()),
-            key=f"m{i}"
-        )
-
-        dents = st.number_input(
-            t("Количество", "Numero"),
-            min_value=1,
-            value=1,
-            key=f"d{i}"
-        )
+    for size, location, material, dents in zones_data:
 
         price = base[size]
         price *= loc_mult[location]
@@ -78,11 +77,6 @@ with st.form("calc_form"):
         price += (dents - 1) * 20
 
         total += price
-
-    submitted = st.form_submit_button(t("Посчитать", "Calcola"))
-
-# ---------------- RESULT ----------------
-if submitted:
 
     total = max(120, min(total, 450))
 
@@ -94,3 +88,9 @@ if submitted:
     st.write(f"💨 {t('Быстро', 'Veloce')}: {fast} €")
     st.write(f"💼 {t('Норм', 'Normale')}: {int(total)} €")
     st.write(f"✅ {t('Итог', 'Finale')}: {final} €")
+
+    st.text_area(
+        t("Сообщение клиенту", "Messaggio cliente"),
+        f"{final}€ senza verniciatura (PDR)" if lang == "Italiano"
+        else f"{final}€ без покраски (PDR)"
+    )
