@@ -1,21 +1,14 @@
 import streamlit as st
 
-st.set_page_config(page_title="PDR Calculator", layout="centered")
-
 st.title("PDR Calculator PRO+ 🔥")
 
-# ---------------- LANGUAGE ----------------
 lang = st.selectbox("Язык / Lingua", ["Русский", "Italiano"])
 
 def t(ru, it):
     return ru if lang == "Русский" else it
 
 # ---------------- DATA ----------------
-base = {
-    "small": 50,
-    "medium": 75,
-    "large": 110
-}
+base = {"small": 50, "medium": 75, "large": 110}
 
 loc_mult = {
     "door": 1.0,
@@ -40,88 +33,43 @@ brand_mult = {
     "mercedes": 1.2
 }
 
-labels = {
-    "size": t("Размер", "Dimensione"),
-    "location": t("Место", "Posizione"),
-    "material": t("Материал", "Materiale"),
-    "dents": t("Количество", "Numero"),
-    "brand": t("Марка", "Marca"),
-    "zones": t("Сколько зон?", "Numero zone"),
-    "calc": t("Посчитать", "Calcola"),
-    "price": t("Цена", "Prezzo"),
-    "fast": t("Быстро", "Veloce"),
-    "normal": t("Норм", "Normale"),
-    "final": t("Итог", "Finale"),
-    "msg": t("Сообщение клиенту", "Messaggio cliente")
-}
+# ---------------- INPUT FORM ----------------
+with st.form("calc_form"):
 
-zones = {
-    "door": t("Дверь", "Porta"),
-    "hood": t("Капот", "Cofano"),
-    "trunk": t("Багажник", "Bagagliaio"),
-    "roof": t("Крыша", "Tetto"),
-    "pillar": t("Стойка", "Montante"),
-    "edge": t("Ребро", "Bordo")
-}
+    brand = st.text_input(t("Марка", "Marca")).lower()
 
-sizes = {
-    "small": t("маленькая", "piccola"),
-    "medium": t("средняя", "media"),
-    "large": t("большая", "grande")
-}
-
-materials = {
-    "steel": t("металл", "acciaio"),
-    "aluminum": t("алюминий", "alluminio")
-}
-
-# ---------------- INPUT ----------------
-brand = st.text_input(labels["brand"]).lower()
-
-num = st.number_input(labels["zones"], 1, 10, 1)
-
-data = []
-
-for i in range(num):
-
-    st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
-
-    size = st.selectbox(
-        labels["size"],
-        list(base.keys()),
-        format_func=lambda x: sizes[x],
-        key=f"size_{i}"
-    )
-
-    location = st.selectbox(
-        labels["location"],
-        list(loc_mult.keys()),
-        format_func=lambda x: zones[x],
-        key=f"loc_{i}"
-    )
-
-    material = st.selectbox(
-        labels["material"],
-        list(mat_mult.keys()),
-        format_func=lambda x: materials[x],
-        key=f"mat_{i}"
-    )
-
-    dents = st.number_input(
-        labels["dents"],
-        min_value=1,
-        value=1,
-        key=f"dents_{i}"
-    )
-
-    data.append((size, location, material, dents))
-
-# ---------------- CALCULATION ----------------
-if st.button(labels["calc"]):
+    num = st.number_input(t("Сколько зон?", "Numero zone"), 1, 10, 1)
 
     total = 0
 
-    for size, location, material, dents in data:
+    for i in range(num):
+
+        st.markdown(f"### {t('Зона', 'Zona')} {i+1}")
+
+        size = st.selectbox(
+            t("Размер", "Dimensione"),
+            ["small", "medium", "large"],
+            key=f"s{i}"
+        )
+
+        location = st.selectbox(
+            t("Место", "Posizione"),
+            list(loc_mult.keys()),
+            key=f"l{i}"
+        )
+
+        material = st.selectbox(
+            t("Материал", "Materiale"),
+            list(mat_mult.keys()),
+            key=f"m{i}"
+        )
+
+        dents = st.number_input(
+            t("Количество", "Numero"),
+            min_value=1,
+            value=1,
+            key=f"d{i}"
+        )
 
         price = base[size]
         price *= loc_mult[location]
@@ -131,22 +79,18 @@ if st.button(labels["calc"]):
 
         total += price
 
-    # limits (Naples realistic)
+    submitted = st.form_submit_button(t("Посчитать", "Calcola"))
+
+# ---------------- RESULT ----------------
+if submitted:
+
     total = max(120, min(total, 450))
 
     fast = int(total * 0.85)
     final = int(round(total / 10) * 10)
 
-    st.subheader(labels["price"])
+    st.subheader(t("Цена", "Prezzo"))
 
-    st.write(f"💨 {labels['fast']}: {fast} €")
-    st.write(f"💼 {labels['normal']}: {int(total)} €")
-    st.write(f"✅ {labels['final']}: {final} €")
-
-    msg = (
-        f"Prezzo per la riparazione: {final}€ senza verniciatura (PDR)"
-        if lang == "Italiano"
-        else f"Цена ремонта: {final}€ без покраски (PDR)"
-    )
-
-    st.text_area(labels["msg"], msg)
+    st.write(f"💨 {t('Быстро', 'Veloce')}: {fast} €")
+    st.write(f"💼 {t('Норм', 'Normale')}: {int(total)} €")
+    st.write(f"✅ {t('Итог', 'Finale')}: {final} €")
