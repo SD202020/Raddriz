@@ -1,86 +1,126 @@
 import streamlit as st
 
-st.set_page_config(page_title="Raddriz", layout="centered")
+st.set_page_config(page_title="Raddriz MAP", layout="centered")
 
-st.title("Raddriz 🔧 PDR калькулятор")
+st.title("Raddriz MAP 🔧 PDR калькулятор")
 
 # ---------------- BASE ----------------
-base_price = {"маленькая": 70, "средняя": 140, "большая": 260}
+base_price = {
+    "маленькая": 70,
+    "средняя": 140,
+    "большая": 260
+}
 
-brand_mult = {"": 1.0, "fiat": 1.0, "volvo": 1.1, "bmw": 1.3, "audi": 1.3, "mercedes": 1.4}
+material_mult = {
+    "сталь": 1.0,
+    "алюминий": 1.35
+}
 
-material_mult = {"сталь": 1.0, "алюминий": 1.35}
+brand_mult = {
+    "": 1.0,
+    "fiat": 1.0,
+    "volvo": 1.1,
+    "bmw": 1.3,
+    "audi": 1.3,
+    "mercedes": 1.4
+}
+
+# ---------------- SMART LOCATIONS ----------------
+# ВАЖНО: здесь мы УБРАЛИ "ребро" как выбор — программа решает сама
+location_data = {
+    "дверь (плоско)": 1.0,
+    "дверь (линия/ребро)": 1.35,
+
+    "капот (плоско)": 1.0,
+    "капот (линия/ребро)": 1.35,
+
+    "багажник (плоско)": 1.05,
+    "багажник (линия/ребро)": 1.4,
+
+    "крыша (плоско)": 1.15,
+    "крыша (линия/ребро)": 1.5,
+
+    "стойка": 1.6,
+}
 
 # ---------------- INPUT ----------------
 brand = st.text_input("Марка авто").lower()
 
-zones_count = st.number_input("Сколько вмятин / зон?", 1, 10, 1)
+zones_count = st.number_input("Сколько зон?", 1, 10, 1)
 
-total = 0
+zones = []
 
 for i in range(int(zones_count)):
 
-    st.markdown(f"### Вмятина {i+1}")
+    st.markdown(f"### Зона {i+1}")
 
     size = st.selectbox(
-        "Размер",
+        "Размер вмятины",
         ["маленькая", "средняя", "большая"],
-        key=f"s{i}"
+        key=f"size_{i}"
     )
 
-    part = st.selectbox(
-        "Деталь",
-        ["дверь", "капот", "багажник", "крыша", "стойка"],
-        key=f"p{i}"
-    )
-
-    position = st.selectbox(
-        "Где на детали",
-        ["плоско", "ребро"],
-        key=f"pos{i}"
+    location = st.selectbox(
+        "Место и тип",
+        list(location_data.keys()),
+        key=f"loc_{i}"
     )
 
     material = st.selectbox(
         "Материал",
-        ["сталь", "алюминий"],
-        key=f"m{i}"
+        list(material_mult.keys()),
+        key=f"mat_{i}"
     )
 
-    dents = st.slider(
+    dents = st.number_input(
         "Количество вмятин",
         1, 10, 1,
-        key=f"d{i}"
+        key=f"dents_{i}"
     )
 
-    # ---------------- LOGIC ----------------
-    price = base_price[size]
+    zones.append({
+        "size": size,
+        "location": location,
+        "material": material,
+        "dents": dents
+    })
 
-    # деталь
-    part_mult = {
-        "дверь": 1.0,
-        "капот": 1.05,
-        "багажник": 1.1,
-        "крыша": 1.2,
-        "стойка": 1.5
-    }
+# ---------------- CALCULATION ----------------
+if st.button("Рассчитать цену"):
 
-    # позиция (это и есть "карта")
-    pos_mult = {
-        "плоско": 1.0,
-        "ребро": 1.4
-    }
+    total = 0
 
-    price *= part_mult[part]
-    price *= pos_mult[position]
-    price *= material_mult[material]
-    price *= brand_mult.get(brand, 1.0)
-    price *= (1 + (dents - 1) * 0.45)
+    for z in zones:
 
-    total += price
+        price = base_price[z["size"]]
 
-# ---------------- RESULT ----------------
-if st.button("Рассчитать"):
+        # сложность места (автоматически ребро/плоскость)
+        price *= location_data[z["location"]]
+
+        # материал
+        price *= material_mult[z["material"]]
+
+        # марка
+        price *= brand_mult.get(brand, 1.0)
+
+        # множественные вмятины
+        price *= (1 + (z["dents"] - 1) * 0.45)
+
+        total += price
 
     total = max(130, min(total, 900))
 
-    st.subheader(f"💰 Цена: {int(total)} €")
+    fast = int(total * 0.85)
+    normal = int(total)
+    final = int(round(total / 10) * 10)
+
+    st.subheader("💰 Результат")
+
+    st.write(f"💨 Быстро: {fast} €")
+    st.write(f"💼 Норм: {normal} €")
+    st.write(f"✅ Итог: {final} €")
+
+    st.text_area(
+        "Сообщение клиенту",
+        f"Цена ремонта без покраски (PDR): {final}€"
+    )
