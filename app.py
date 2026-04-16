@@ -1,21 +1,112 @@
-total = 0
+import streamlit as st
 
-for z in zones_data:
+st.set_page_config(page_title="Raddriz", layout="centered")
 
-    # 1. БАЗА (сильная разница!)
-    if z["size"] == "маленькая":
-        price = 60
-    elif z["size"] == "средняя":
-        price = 120
-    else:
-        price = 220
+st.title("Raddriz 🔧 PDR калькулятор")
 
-    # 2. СЛОЖНОСТЬ
-    price *= location_mult[z["location"]]
-    price *= material_mult[z["material"]]
-    price *= brand_mult.get(brand, 1.0)
+# ---------------- DATA ----------------
+location_mult = {
+    "дверь": 1.0,
+    "капот": 1.0,
+    "багажник": 1.05,
+    "крыша": 1.15,
+    "стойка": 1.25,
+    "ребро": 1.30
+}
 
-    # 3. ВМЯТИНЫ (важно!)
-    price *= (1 + (z["dents"] - 1) * 0.35)
+material_mult = {
+    "сталь": 1.0,
+    "алюминий": 1.25
+}
 
-    total += price
+brand_mult = {
+    "": 1.0,
+    "fiat": 1.0,
+    "volvo": 1.05,
+    "bmw": 1.15,
+    "audi": 1.15,
+    "mercedes": 1.2
+}
+
+# ---------------- INPUT ----------------
+brand = st.text_input("Марка авто").lower()
+
+zones_count = st.number_input("Сколько зон?", 1, 10, 1)
+
+zones_data = []
+
+for i in range(int(zones_count)):
+
+    st.markdown(f"### Зона {i+1}")
+
+    size = st.selectbox(
+        "Размер",
+        ["маленькая", "средняя", "большая"],
+        key=f"size_{i}"
+    )
+
+    location = st.selectbox(
+        "Место",
+        list(location_mult.keys()),
+        key=f"loc_{i}"
+    )
+
+    material = st.selectbox(
+        "Материал",
+        list(material_mult.keys()),
+        key=f"mat_{i}"
+    )
+
+    dents = st.number_input(
+        "Количество вмятин",
+        1, 10, 1,
+        key=f"dents_{i}"
+    )
+
+    zones_data.append({
+        "size": size,
+        "location": location,
+        "material": material,
+        "dents": dents
+    })
+
+# ---------------- CALC ----------------
+if st.button("Рассчитать"):
+
+    total = 0
+
+    for z in zones_data:
+
+        # БАЗА
+        if z["size"] == "маленькая":
+            price = 60
+        elif z["size"] == "средняя":
+            price = 120
+        else:
+            price = 220
+
+        # КОЭФФИЦИЕНТЫ
+        price *= location_mult[z["location"]]
+        price *= material_mult[z["material"]]
+        price *= brand_mult.get(brand, 1.0)
+
+        # ВМЯТИНЫ
+        price *= (1 + (z["dents"] - 1) * 0.35)
+
+        total += price
+
+    total = max(120, min(total, 500))
+
+    fast = int(total * 0.85)
+    final = int(round(total / 10) * 10)
+
+    st.subheader("💰 Результат")
+
+    st.write(f"💨 Быстро: {fast} €")
+    st.write(f"💼 Норм: {int(total)} €")
+    st.write(f"✅ Итог: {final} €")
+
+    st.text_area(
+        "Сообщение клиенту",
+        f"Цена ремонта без покраски (PDR): {final}€"
+    )
