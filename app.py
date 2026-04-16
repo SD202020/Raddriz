@@ -2,13 +2,33 @@ import streamlit as st
 
 st.set_page_config(page_title="Raddriz MAP", layout="centered")
 
-st.title("Raddriz MAP 🔧 PDR калькулятор")
+st.title("Raddriz MAP 🔧")
 
-# ---------------- BASE ----------------
+st.write("Выбор зоны ремонта (карта автомобиля)")
+
+# ---------------- БАЗА ----------------
 base_price = {
     "маленькая": 70,
     "средняя": 140,
     "большая": 260
+}
+
+# ---------------- КАРТА МАШИНЫ ----------------
+# это и есть "карта" (упрощённая версия)
+map_zones = {
+    "дверь (плоско)": 1.0,
+    "дверь (ребро/линия)": 1.35,
+
+    "капот (плоско)": 1.0,
+    "капот (ребро/линия)": 1.35,
+
+    "багажник (плоско)": 1.05,
+    "багажник (ребро/линия)": 1.4,
+
+    "крыша (плоско)": 1.15,
+    "крыша (ребро/линия)": 1.5,
+
+    "стойка": 1.6
 }
 
 material_mult = {
@@ -25,28 +45,10 @@ brand_mult = {
     "mercedes": 1.4
 }
 
-# ---------------- SMART LOCATIONS ----------------
-# ВАЖНО: здесь мы УБРАЛИ "ребро" как выбор — программа решает сама
-location_data = {
-    "дверь (плоско)": 1.0,
-    "дверь (линия/ребро)": 1.35,
-
-    "капот (плоско)": 1.0,
-    "капот (линия/ребро)": 1.35,
-
-    "багажник (плоско)": 1.05,
-    "багажник (линия/ребро)": 1.4,
-
-    "крыша (плоско)": 1.15,
-    "крыша (линия/ребро)": 1.5,
-
-    "стойка": 1.6,
-}
-
 # ---------------- INPUT ----------------
-brand = st.text_input("Марка авто").lower()
+brand = st.text_input("Марка авто (bmw, audi, mercedes...)").lower()
 
-zones_count = st.number_input("Сколько зон?", 1, 10, 1)
+zones_count = st.number_input("Сколько зон повреждений?", 1, 10, 1)
 
 zones = []
 
@@ -60,10 +62,10 @@ for i in range(int(zones_count)):
         key=f"size_{i}"
     )
 
-    location = st.selectbox(
-        "Место и тип",
-        list(location_data.keys()),
-        key=f"loc_{i}"
+    zone = st.selectbox(
+        "КАРТА (где вмятина)",
+        list(map_zones.keys()),
+        key=f"zone_{i}"
     )
 
     material = st.selectbox(
@@ -80,12 +82,12 @@ for i in range(int(zones_count)):
 
     zones.append({
         "size": size,
-        "location": location,
+        "zone": zone,
         "material": material,
         "dents": dents
     })
 
-# ---------------- CALCULATION ----------------
+# ---------------- РАСЧЁТ ----------------
 if st.button("Рассчитать цену"):
 
     total = 0
@@ -94,20 +96,18 @@ if st.button("Рассчитать цену"):
 
         price = base_price[z["size"]]
 
-        # сложность места (автоматически ребро/плоскость)
-        price *= location_data[z["location"]]
+        # карта (самое важное)
+        price *= map_zones[z["zone"]]
 
-        # материал
         price *= material_mult[z["material"]]
-
-        # марка
         price *= brand_mult.get(brand, 1.0)
 
-        # множественные вмятины
+        # вмятины
         price *= (1 + (z["dents"] - 1) * 0.45)
 
         total += price
 
+    # ограничения рынка
     total = max(130, min(total, 900))
 
     fast = int(total * 0.85)
