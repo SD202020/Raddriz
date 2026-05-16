@@ -246,6 +246,6 @@ else:
 
         total += price
 
-    total = int(round(total / 10) * 2)
+    total = int(round(total / 10) * 10)
 
     st.subheader(f"💰 Цена: {total} €")
