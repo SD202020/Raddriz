@@ -216,11 +216,11 @@ else:
     st.subheader("🏍️ Мото")
 
     moto_type = st.selectbox("Тип", ["Harley", "Sport", "Other"])
-    material = st.selectbox("Материал", ["сталь", "алюминий"])
+    material = st.selectbox("Материал", ["сталь"])
 
     small = st.number_input("Маленькие", 0, 1000, 0)
     medium = st.number_input("Средние", 0, 1000, 0)
-    large = st.number_input("Большие", 0, 1000, 0)
+    large = st.number_input("Большие", 0, 500, 0)
 
     moto_mult = {
         "Harley": 3.2,
