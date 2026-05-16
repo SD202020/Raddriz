@@ -221,9 +221,9 @@ else:
     medium = st.number_input("Средние", 0, 1000, 0)
 
     moto_mult = {
-        "Harley": 4.2,
-        "Sport": 3.65,
-        "Other": 3.35
+        "Harley": 3.3,
+        "Sport": 3.0,
+        "Other": 2.8
     }
 
     total = 0
