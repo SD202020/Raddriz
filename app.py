@@ -220,14 +220,18 @@ else:
 
     small = st.number_input("Маленькие", 0, 1000, 0)
     medium = st.number_input("Средние", 0, 1000, 0)
-    large = st.number_input("Большие", 0, 100, 0)
+    large = st.number_input("Большие", 0, 1000, 0)
 
     moto_mult = {
         "Harley": 3.2,
         "Sport": 2.65,
         "Other": 2.35
     }
-
+base_price = {
+    "маленькая": 20,
+    "средняя": 45,
+    "большая": 100
+}
     total = 0
 
     for size, count in [
