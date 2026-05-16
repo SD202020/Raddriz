@@ -238,7 +238,6 @@ else:
 
         price = base_price[size]
         price *= moto_mult[moto_type]
-        price *= material_mult[material]
         price *= (1 + 0.30 * (count - 1)) * (0.95 ** (count - 1))
 
         total += price
