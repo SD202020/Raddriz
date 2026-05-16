@@ -223,9 +223,9 @@ else:
     large = st.number_input("Большие", 0, 1000, 0)
 
     moto_mult = {
-        "Harley": 3.55,
-        "Sport": 2.35,
-        "Other": 2.15
+        "Harley": 2.55,
+        "Sport": 1.35,
+        "Other": 1.15
     }
 
     total = 0
