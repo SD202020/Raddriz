@@ -16,11 +16,7 @@ base_price = {
     "средняя": 45,
     "большая": 150
 }
-base_price ("🏍️ Мото") = {
-    "маленькая": 30,
-    "средняя": 55,
-    "большая": 100
-}
+
 size_mult = {
     "маленькая": 1.2,
     "средняя": 1.4,
@@ -250,6 +246,6 @@ else:
 
         total += price
 
-    total = int(round(total / 10) * 10)
+    total = int(round(total / 10) * 2)
 
     st.subheader(f"💰 Цена: {total} €")
