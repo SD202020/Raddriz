@@ -220,7 +220,6 @@ else:
 
     small = st.number_input("Маленькие", 0, 1000, 0)
     medium = st.number_input("Средние", 0, 1000, 0)
-    large = st.number_input("Большие", 0, 1000, 0)
 
     moto_mult = {
         "Harley": 3.2,
@@ -232,7 +231,7 @@ else:
 
     for size, count in [
         ("маленькая", small),
-        ("большая", medium),
+        ("средняя", medium),
     ]:
 
         if count == 0:
