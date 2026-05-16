@@ -232,8 +232,7 @@ else:
 
     for size, count in [
         ("маленькая", small),
-        ("средняя", medium),
-        ("большая", large)
+        ("большая", medium),
     ]:
 
         if count == 0:
