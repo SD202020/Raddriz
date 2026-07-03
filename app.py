@@ -14,7 +14,7 @@ vehicle_type = st.radio("Тип транспорта", ["Авто", "Мото"])
 base_price = {
     "маленькая": 30,
     "средняя": 50,
-    "большая": 120
+    "большая": 115
 }
 
 size_mult = {
@@ -59,7 +59,7 @@ material_mult = {
 brand_mult = {
     "": 1.0,
     "Fiat": 1.0,
-    "Volvo": 1.2,
+    "Volvo": 1.3,
     "Bmw": 1.3,
     "Audi": 1.3,
     "Mercedes": 1.3
