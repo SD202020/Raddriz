@@ -57,8 +57,8 @@ material_mult = {
 }
 
 brand_mult = {
-    "": 1.0,
-    "fiat": 1.0,
+    "": 0.7,
+    "fiat": 0.7,
     "volvo": 1.2,
     "bmw": 1.2,
     "audi": 1.2,
